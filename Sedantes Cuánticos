@@ -1,0 +1,474 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Moon, 
+  Zap, 
+  Target, 
+  Clock,
+  AlertTriangle,
+  Bed,
+  Activity,
+  Pause,
+  ZapOff,
+  Brain,
+  Wifi,
+  WifiOff,
+  Volume2,
+  VolumeX,
+  Eye,
+  EyeOff,
+  Coffee
+} from 'lucide-react';
+
+const QuantumSleepMode = () => {
+  const [activeBots, setActiveBots] = useState([
+    {
+      id: 'hl1xci',
+      platform: 'Amazon Flex',
+      type: 'pattern_bot',
+      confidence: 88,
+      responseTime: 38,
+      earnings: 104,
+      status: 'active',
+      sleepResistance: 75,
+      lastActivity: new Date(),
+      caffeinationLevel: 85,
+      stressLevel: 92,
+      sleepDebt: 0
+    },
+    {
+      id: 'jogpuw', 
+      platform: 'DoorDash',
+      type: 'speed_bot',
+      confidence: 81,
+      responseTime: 20,
+      earnings: 385,
+      status: 'active',
+      sleepResistance: 68,
+      lastActivity: new Date(),
+      caffeinationLevel: 95,
+      stressLevel: 78,
+      sleepDebt: 0
+    }
+  ]);
+
+  const [sleepingBots, setSleepingBots] = useState([]);
+  const [sedativeAmmo, setSedativeAmmo] = useState(90);
+  const [activeOperations, setActiveOperations] = useState([]);
+
+  // Sedantes cuánticos disponibles
+  const sleepWeapons = {
+    'melatonin_burst': {
+      name: 'Ráfaga de Melatonina',
+      description: 'Induce sueño natural gradual',
+      energy: 20,
+      effectiveness: 0.7,
+      duration: 15, // minutos
+      icon: Moon,
+      color: 'blue',
+      resistance: 'low'
+    },
+    'neural_dampener': {
+      name: 'Amortiguador Neural',
+      description: 'Reduce actividad cerebral del bot',
+      energy: 30,
+      effectiveness: 0.8,
+      duration: 30,
+      icon: Brain,
+      color: 'purple',
+      resistance: 'medium'
+    },
+    'frequency_lullaby': {
+      name: 'Canción de Cuna Cuántica',
+      description: 'Ondas tranquilizantes que inducen somnolencia',
+      energy: 35,
+      effectiveness: 0.85,
+      duration: 45,
+      icon: Volume2,
+      color: 'green',
+      resistance: 'medium'
+    },
+    'caffeine_neutralizer': {
+      name: 'Neutralizador de Cafeína',
+      description: 'Bloquea estimulantes en el sistema del bot',
+      energy: 40,
+      effectiveness: 0.9,
+      duration: 60,
+      icon: Coffee,
+      color: 'orange',
+      resistance: 'high'
+    },
+    'digital_anesthesia': {
+      name: 'Anestesia Digital',
+      description: 'Sedante profundo para bots resistentes',
+      energy: 50,
+      effectiveness: 0.95,
+      duration: 120,
+      icon: ZapOff,
+      color: 'red',
+      resistance: 'very_high'
+    },
+    'quantum_hibernation': {
+      name: 'Hibernación Cuántica',
+      description: 'Suspensión animada temporal del bot',
+      energy: 60,
+      effectiveness: 0.98,
+      duration: 240, // 4 horas
+      icon: Pause,
+      color: 'indigo',
+      resistance: 'extreme'
+    }
+  };
+
+  // Aplicar sedante a un bot
+  const applySedative = (botId, sedativeType) => {
+    const bot = activeBots.find(b => b.id === botId);
+    const sedative = sleepWeapons[sedativeType];
+    
+    if (sedativeAmmo < sedative.energy) {
+      alert('😴 Sedante insuficiente! Necesitas recargar.');
+      return;
+    }
+
+    setSedativeAmmo(prev => prev - sedative.energy);
+
+    const operation = {
+      id: `sleep_${Date.now()}`,
+      botId,
+      sedativeType,
+      target: bot,
+      startTime: new Date(),
+      progress: 0,
+      phase: 'aplicando'
+    };
+
+    setActiveOperations(prev => [...prev, operation]);
+
+    // Simular proceso de sedación
+    const sedationInterval = setInterval(() => {
+      setActiveOperations(prev => prev.map(op => {
+        if (op.id === operation.id) {
+          const newProgress = op.progress + (Math.random() * 15 + 5);
+          
+          if (newProgress >= 100) {
+            clearInterval(sedationInterval);
+            
+            // Calcular éxito basado en resistencia vs efectividad
+            const successChance = sedative.effectiveness * (1 - (bot.sleepResistance / 100)) * 
+                                 (1 - (bot.caffeinationLevel / 200)); // Cafeína reduce efectividad
+            const success = Math.random() < successChance;
+            
+            if (success) {
+              // Bot se durmió
+              const sleepDuration = sedative.duration + (Math.random() * 30 - 15); // ±15 min variación
+              const sleepingBot = {
+                ...bot,
+                status: 'sleeping',
+                sleepStart: new Date(),
+                sleepDuration: sleepDuration,
+                sedativeUsed: sedative.name,
+                wakeUpTime: new Date(Date.now() + sleepDuration * 60000),
+                sleepQuality: Math.random() * 0.4 + 0.6 // 60-100%
+              };
+              
+              setSleepingBots(prev => [...prev, sleepingBot]);
+              setActiveBots(prev => prev.filter(b => b.id !== botId));
+              
+              return { ...op, progress: 100, phase: 'éxito', result: 'dormido' };
+            } else {
+              // Bot resistió
+              setActiveBots(prev => prev.map(b => 
+                b.id === botId 
+                  ? { 
+                      ...b, 
+                      sleepResistance: Math.min(99, b.sleepResistance + 10),
+                      caffeinationLevel: Math.min(100, b.caffeinationLevel + 15),
+                      stressLevel: Math.min(100, b.stressLevel + 20)
+                    }
+                  : b
+              ));
+              
+              return { ...op, progress: 100, phase: 'falló', result: 'resistente' };
+            }
+          }
+          
+          // Actualizar fase según progreso
+          let phase = 'aplicando';
+          if (newProgress > 30) phase = 'circulando';
+          if (newProgress > 60) phase = 'haciendo_efecto';
+          if (newProgress > 85) phase = 'finalizando';
+          
+          return { ...op, progress: newProgress, phase };
+        }
+        return op;
+      }));
+    }, 800);
+  };
+
+  // Despertar bots (cuando termine el efecto)
+  useEffect(() => {
+    const wakeUpInterval = setInterval(() => {
+      const now = new Date();
+      
+      setSleepingBots(prev => {
+        const stillSleeping = [];
+        const wakeUp = [];
+        
+        prev.forEach(bot => {
+          if (now >= bot.wakeUpTime) {
+            wakeUp.push({
+              ...bot,
+              status: 'active',
+              sleepResistance: Math.max(0, bot.sleepResistance - 5), // Se reduce un poco
+              caffeinationLevel: Math.max(0, bot.caffeinationLevel - 30),
+              stressLevel: Math.max(0, bot.stressLevel - 25),
+              sleepDebt: 0,
+              lastActivity: now
+            });
+          } else {
+            stillSleeping.push(bot);
+          }
+        });
+        
+        if (wakeUp.length > 0) {
+          setActiveBots(current => [...current, ...wakeUp]);
+        }
+        
+        return stillSleeping;
+      });
+    }, 10000); // Revisar cada 10 segundos
+
+    return () => clearInterval(wakeUpInterval);
+  }, []);
+
+  // Recarga de sedantes
+  useEffect(() => {
+    const rechargeInterval = setInterval(() => {
+      setSedativeAmmo(prev => Math.min(100, prev + 3));
+    }, 2000);
+
+    return () => clearInterval(rechargeInterval);
+  }, []);
+
+  const formatTimeRemaining = (wakeUpTime) => {
+    const now = new Date();
+    const remaining = Math.max(0, wakeUpTime - now);
+    const minutes = Math.floor(remaining / 60000);
+    const seconds = Math.floor((remaining % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 text-white p-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header de sedación */}
+        <div className="bg-black/40 backdrop-blur-sm rounded-xl p-6 border border-blue-500/30 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Moon className="text-blue-400 animate-pulse" size={32} />
+            <div>
+              <h1 className="text-2xl font-bold text-blue-300">Quantum Sleep Mode 😴</h1>
+              <p className="text-gray-300">Sedantes cuánticos para poner bots resistentes a dormir</p>
+            </div>
+          </div>
+          
+          {/* Sedantes disponibles */}
+          <div>
+            <div className="flex justify-between text-sm mb-1">
+              <span>Sedantes Cuánticos Disponibles</span>
+              <span>{sedativeAmmo}%</span>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-3">
+              <div 
+                className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300"
+                style={{width: `${sedativeAmmo}%`}}
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Estadísticas */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="bg-red-900/30 backdrop-blur-sm rounded-xl p-4 border border-red-500/30">
+            <div className="text-center">
+              <Target className="mx-auto mb-2 text-red-400" size={24} />
+              <div className="text-2xl font-bold text-red-400">{activeBots.length}</div>
+              <div className="text-sm text-gray-300">Bots Activos</div>
+            </div>
+          </div>
+
+          <div className="bg-blue-900/30 backdrop-blur-sm rounded-xl p-4 border border-blue-500/30">
+            <div className="text-center">
+              <Bed className="mx-auto mb-2 text-blue-400" size={24} />
+              <div className="text-2xl font-bold text-blue-400">{sleepingBots.length}</div>
+              <div className="text-sm text-gray-300">Durmiendo</div>
+            </div>
+          </div>
+
+          <div className="bg-purple-900/30 backdrop-blur-sm rounded-xl p-4 border border-purple-500/30">
+            <div className="text-center">
+              <ZapOff className="mx-auto mb-2 text-purple-400" size={24} />
+              <div className="text-2xl font-bold text-purple-400">{activeOperations.length}</div>
+              <div className="text-sm text-gray-300">Sedando</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Operaciones activas de sedación */}
+        {activeOperations.length > 0 && (
+          <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-purple-500/30 mb-6">
+            <h2 className="text-lg font-bold text-purple-300 mb-4 flex items-center gap-2">
+              <Activity className="animate-pulse" />
+              Aplicando Sedantes...
+            </h2>
+            
+            <div className="space-y-3">
+              {activeOperations.filter(op => op.progress < 100).map(operation => (
+                <div key={operation.id} className="bg-purple-900/30 rounded-lg p-4 border border-purple-500/20">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-semibold">
+                      {sleepWeapons[operation.sedativeType].name} → {operation.target.platform}
+                    </span>
+                    <span className="text-sm text-gray-300 capitalize">
+                      {operation.phase.replace('_', ' ')}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-purple-500 h-2 rounded-full transition-all duration-300"
+                      style={{width: `${operation.progress}%`}}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bots durmiendo */}
+        {sleepingBots.length > 0 && (
+          <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-blue-500/30 mb-6">
+            <h2 className="text-lg font-bold text-blue-300 mb-4 flex items-center gap-2">
+              <Bed />
+              Bots Durmiendo 😴
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {sleepingBots.map(bot => (
+                <div key={bot.id} className="bg-blue-900/30 rounded-lg p-4 border border-blue-500/20">
+                  <div className="flex justify-between items-center mb-2">
+                    <div>
+                      <div className="font-semibold text-blue-200">{bot.platform} #{bot.id}</div>
+                      <div className="text-xs text-gray-300">Sedante: {bot.sedativeUsed}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-blue-400">
+                        💤 {formatTimeRemaining(bot.wakeUpTime)}
+                      </div>
+                      <div className="text-xs text-gray-300">para despertar</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <EyeOff size={14} className="text-blue-400" />
+                    <span>Calidad del sueño: {(bot.sleepQuality * 100).toFixed(0)}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bots activos para sedar */}
+        <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-red-500/30">
+          <h2 className="text-lg font-bold text-red-300 mb-4 flex items-center gap-2">
+            <Target />
+            Bots Activos - Aplicar Sedante
+          </h2>
+          
+          <div className="space-y-4">
+            {activeBots.map(bot => (
+              <div key={bot.id} className="bg-red-900/30 rounded-lg p-6 border border-red-500/20">
+                
+                {/* Info del bot */}
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <div className="font-semibold text-red-200 mb-1">
+                      {bot.platform} Bot #{bot.id}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>Respuesta: {bot.responseTime}ms</div>
+                      <div>Ganancias: ${bot.earnings}/día</div>
+                      <div>Resistencia al sueño: {bot.sleepResistance}%</div>
+                      <div>Nivel de cafeína: {bot.caffeinationLevel}%</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-red-400">{bot.confidence}%</div>
+                    <div className="text-sm text-gray-300">Confianza</div>
+                  </div>
+                </div>
+
+                {/* Sedantes disponibles */}
+                <div>
+                  <h4 className="font-semibold text-blue-300 mb-3">💤 Sedantes Cuánticos:</h4>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                    {Object.entries(sleepWeapons).map(([key, sedative]) => {
+                      const IconComponent = sedative.icon;
+                      const canAfford = sedativeAmmo >= sedative.energy;
+                      const effectiveness = sedative.effectiveness * (1 - (bot.sleepResistance / 100));
+                      
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => applySedative(bot.id, key)}
+                          disabled={!canAfford}
+                          className={`p-3 rounded-lg border transition-all ${
+                            canAfford
+                              ? `bg-${sedative.color}-600 border-${sedative.color}-400 hover:bg-${sedative.color}-700`
+                              : 'bg-gray-600 border-gray-400 opacity-50 cursor-not-allowed'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            <IconComponent size={16} />
+                            <span className="font-semibold text-sm">{sedative.name}</span>
+                          </div>
+                          <div className="text-xs text-left">
+                            <div>💊{sedative.energy} | 😴{(effectiveness * 100).toFixed(0)}%</div>
+                            <div>⏰{sedative.duration}min de sueño</div>
+                            <div className="text-gray-200 mt-1">{sedative.description}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Guía de sedación */}
+        <div className="mt-6 bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-gray-500/30">
+          <h3 className="text-lg font-bold mb-4 text-gray-300 flex items-center gap-2">
+            <Moon />
+            💤 Guía de Sedación Cuántica
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <strong className="text-blue-300">Ventajas del Sueño:</strong>
+              <p className="text-gray-400">• No destruyes el bot, solo lo neutralizas temporalmente</p>
+              <p className="text-gray-400">• Reduce su resistencia para futuros ataques</p>
+              <p className="text-gray-400">• Menos probabilidad de adaptación</p>
+            </div>
+            <div>
+              <strong className="text-purple-300">Estrategia:</strong>
+              <p className="text-gray-400">• Usa sedantes suaves primero</p>
+              <p className="text-gray-400">• La cafeína alta reduce efectividad</p>
+              <p className="text-gray-400">• Hibernación cuántica para los más resistentes</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default QuantumSleepMode;
