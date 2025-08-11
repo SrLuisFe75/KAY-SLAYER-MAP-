@@ -1,0 +1,384 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Shield, 
+  Zap, 
+  Target, 
+  Bomb, 
+  AlertTriangle,
+  Crosshair,
+  Activity,
+  Skull,
+  Flame,
+  RefreshCw,
+  Network,
+  Brain,
+  Eye,
+  Lock
+} from 'lucide-react';
+
+const AdvancedBotWarfare = () => {
+  const [resistantBots, setResistantBots] = useState([
+    {
+      id: 'hl1xci',
+      platform: 'Amazon Flex',
+      type: 'pattern_bot',
+      confidence: 88,
+      responseTime: 38,
+      earnings: 104,
+      status: 'resistant',
+      resistanceLevel: 85,
+      adaptiveAI: true,
+      encryptedComms: true,
+      multiNode: true,
+      lastAttackSurvived: 'Decoherencia Cuántica',
+      weaknesses: ['temporal_desync', 'quantum_tunneling'],
+      adaptations: 3
+    },
+    {
+      id: 'jogpuw',
+      platform: 'DoorDash',
+      type: 'speed_bot',
+      confidence: 81,
+      responseTime: 20,
+      earnings: 385,
+      status: 'resistant',
+      resistanceLevel: 92,
+      adaptiveAI: true,
+      encryptedComms: true,
+      multiNode: false,
+      lastAttackSurvived: 'Interferencia Cuántica',
+      weaknesses: ['overload_cascade', 'phase_inversion'],
+      adaptations: 5
+    }
+  ]);
+
+  const [selectedBot, setSelectedBot] = useState(null);
+  const [advancedAmmo, setAdvancedAmmo] = useState(75);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Armas avanzadas contra resistentes
+  const advancedWeapons = {
+    'quantum_tunneling': {
+      name: 'Túnel Cuántico',
+      description: 'Penetra defensas adaptativas',
+      energy: 45,
+      effectiveness: 0.95,
+      specialTarget: 'adaptive_shields',
+      icon: Target,
+      color: 'blue'
+    },
+    'temporal_desync': {
+      name: 'Desincronización Temporal',
+      description: 'Disrumpe la sincronización del bot',
+      energy: 50,
+      effectiveness: 0.98,
+      specialTarget: 'timing_algorithms',
+      icon: RefreshCw,
+      color: 'purple'
+    },
+    'overload_cascade': {
+      name: 'Cascada de Sobrecarga',
+      description: 'Sobrecarga todos los nodos simultáneamente',
+      energy: 60,
+      effectiveness: 0.99,
+      specialTarget: 'multi_node_systems',
+      icon: Network,
+      color: 'red'
+    },
+    'phase_inversion': {
+      name: 'Inversión de Fase',
+      description: 'Invierte la lógica del algoritmo',
+      energy: 55,
+      effectiveness: 0.97,
+      specialTarget: 'decision_trees',
+      icon: Brain,
+      color: 'green'
+    },
+    'quantum_virus': {
+      name: 'Virus Cuántico',
+      description: 'Se propaga a bots conectados',
+      energy: 70,
+      effectiveness: 0.85,
+      specialTarget: 'network_clusters',
+      icon: Skull,
+      color: 'red'
+    },
+    'reality_anchor': {
+      name: 'Ancla de Realidad',
+      description: 'Fuerza al bot a la realidad física',
+      energy: 65,
+      effectiveness: 0.96,
+      specialTarget: 'location_spoofing',
+      icon: Lock,
+      color: 'yellow'
+    }
+  };
+
+  // Análisis profundo de vulnerabilidades
+  const analyzeVulnerabilities = (bot) => {
+    setIsAnalyzing(true);
+    setSelectedBot(bot);
+    
+    setTimeout(() => {
+      // Simular análisis cuántico profundo
+      const analysis = {
+        criticalWeakness: bot.weaknesses[Math.floor(Math.random() * bot.weaknesses.length)],
+        recommendedWeapon: Object.keys(advancedWeapons)[Math.floor(Math.random() * Object.keys(advancedWeapons).length)],
+        successProbability: Math.random() * 0.4 + 0.6, // 60-100%
+        estimatedDamage: Math.random() * 40 + 60, // 60-100%
+        counterMeasures: bot.adaptations,
+        exploitWindow: Math.random() * 30 + 10 // 10-40 segundos
+      };
+      
+      setSelectedBot({...bot, analysis});
+      setIsAnalyzing(false);
+    }, 3000);
+  };
+
+  // Ataque coordinado
+  const launchCoordinatedAttack = (botId, weaponType) => {
+    const bot = resistantBots.find(b => b.id === botId);
+    const weapon = advancedWeapons[weaponType];
+    
+    if (advancedAmmo < weapon.energy) {
+      alert('⚡ Energía insuficiente para arma avanzada!');
+      return;
+    }
+
+    setAdvancedAmmo(prev => prev - weapon.energy);
+
+    // Simular ataque avanzado
+    setTimeout(() => {
+      const successRate = weapon.effectiveness * (bot.analysis?.successProbability || 0.7);
+      const success = Math.random() < successRate;
+      
+      if (success) {
+        setResistantBots(prev => prev.map(b => 
+          b.id === botId 
+            ? { ...b, status: 'destroyed', destroyedBy: weapon.name }
+            : b
+        ));
+        alert(`💀 ${bot.platform} Bot #${botId} ELIMINADO con ${weapon.name}!`);
+      } else {
+        setResistantBots(prev => prev.map(b => 
+          b.id === botId 
+            ? { 
+                ...b, 
+                resistanceLevel: Math.min(99, b.resistanceLevel + 5),
+                adaptations: b.adaptations + 1
+              }
+            : b
+        ));
+        alert(`🛡️ Bot resistió el ataque y se adaptó! Resistencia: +5%`);
+      }
+    }, 2000);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-red-900 via-gray-900 to-black text-white p-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header de guerra avanzada */}
+        <div className="bg-black/50 backdrop-blur-sm rounded-xl p-6 border border-red-500/30 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Shield className="text-red-400 animate-pulse" size={32} />
+            <div>
+              <h1 className="text-2xl font-bold text-red-300">Tácticas Avanzadas Anti-Resistentes</h1>
+              <p className="text-gray-300">Armas cuánticas de alta potencia para bots blindados</p>
+            </div>
+          </div>
+          
+          {/* Energía avanzada */}
+          <div>
+            <div className="flex justify-between text-sm mb-1">
+              <span>Energía de Armas Avanzadas</span>
+              <span>{advancedAmmo}%</span>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-3">
+              <div 
+                className="bg-gradient-to-r from-red-500 to-purple-500 h-3 rounded-full transition-all duration-300"
+                style={{width: `${advancedAmmo}%`}}
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bots resistentes */}
+        <div className="space-y-4">
+          {resistantBots.map(bot => (
+            <div key={bot.id} className={`bg-black/30 backdrop-blur-sm rounded-xl p-6 border ${
+              bot.status === 'destroyed' 
+                ? 'border-gray-500/30 opacity-50' 
+                : 'border-yellow-500/30'
+            }`}>
+              
+              {/* Header del bot */}
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="text-yellow-400" size={20} />
+                    <h3 className="text-xl font-bold text-yellow-300">
+                      {bot.platform} Bot #{bot.id}
+                    </h3>
+                    {bot.status === 'destroyed' && (
+                      <div className="bg-red-600 px-2 py-1 rounded text-xs">
+                        💀 ELIMINADO: {bot.destroyedBy}
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>Tipo: {bot.type.replace('_', ' ')}</div>
+                    <div>Confianza: {bot.confidence}%</div>
+                    <div>Respuesta: {bot.responseTime}ms</div>
+                    <div>Ganancias: ${bot.earnings}/día</div>
+                  </div>
+                </div>
+                
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-yellow-400">{bot.resistanceLevel}%</div>
+                  <div className="text-sm text-gray-300">Resistencia</div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Adaptaciones: {bot.adaptations}
+                  </div>
+                </div>
+              </div>
+
+              {/* Características del bot resistente */}
+              <div className="bg-gray-900/50 rounded-lg p-4 mb-4">
+                <h4 className="font-semibold text-orange-300 mb-2">🔒 Características Defensivas:</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {bot.adaptiveAI && (
+                    <div className="flex items-center gap-1">
+                      <Brain size={14} className="text-purple-400" />
+                      <span>IA Adaptativa</span>
+                    </div>
+                  )}
+                  {bot.encryptedComms && (
+                    <div className="flex items-center gap-1">
+                      <Lock size={14} className="text-blue-400" />
+                      <span>Comunicaciones Encriptadas</span>
+                    </div>
+                  )}
+                  {bot.multiNode && (
+                    <div className="flex items-center gap-1">
+                      <Network size={14} className="text-green-400" />
+                      <span>Multi-Nodo</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <Shield size={14} className="text-yellow-400" />
+                    <span>Último ataque resistido: {bot.lastAttackSurvived}</span>
+                  </div>
+                </div>
+              </div>
+
+              {bot.status !== 'destroyed' && (
+                <>
+                  {/* Análisis de vulnerabilidades */}
+                  <div className="mb-4">
+                    <button
+                      onClick={() => analyzeVulnerabilities(bot)}
+                      disabled={isAnalyzing}
+                      className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-4 py-2 rounded-lg font-semibold transition-colors"
+                    >
+                      <Eye className={isAnalyzing ? 'animate-spin' : ''} size={16} />
+                      {isAnalyzing ? 'Analizando...' : 'Análisis Cuántico Profundo'}
+                    </button>
+                    
+                    {selectedBot?.id === bot.id && bot.analysis && (
+                      <div className="mt-3 bg-blue-900/30 rounded-lg p-4 border border-blue-500/20">
+                        <h5 className="font-semibold text-blue-300 mb-2">📊 Análisis Completado:</h5>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>Debilidad Crítica: <span className="text-red-400">{bot.analysis.criticalWeakness}</span></div>
+                          <div>Arma Recomendada: <span className="text-green-400">{advancedWeapons[bot.analysis.recommendedWeapon]?.name}</span></div>
+                          <div>Probabilidad Éxito: <span className="text-yellow-400">{(bot.analysis.successProbability * 100).toFixed(0)}%</span></div>
+                          <div>Ventana de Ataque: <span className="text-purple-400">{bot.analysis.exploitWindow.toFixed(0)}s</span></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Armas avanzadas */}
+                  <div>
+                    <h4 className="font-semibold text-red-300 mb-3">🚀 Armas Cuánticas Avanzadas:</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {Object.entries(advancedWeapons).map(([key, weapon]) => {
+                        const IconComponent = weapon.icon;
+                        const canAfford = advancedAmmo >= weapon.energy;
+                        const isRecommended = bot.analysis?.recommendedWeapon === key;
+                        const targetsWeakness = bot.weaknesses.includes(key);
+                        
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => launchCoordinatedAttack(bot.id, key)}
+                            disabled={!canAfford}
+                            className={`p-3 rounded-lg border transition-all ${
+                              isRecommended
+                                ? 'bg-green-600 border-green-400 animate-pulse'
+                                : targetsWeakness
+                                ? 'bg-yellow-600 border-yellow-400'
+                                : canAfford
+                                ? `bg-${weapon.color}-600 border-${weapon.color}-400 hover:bg-${weapon.color}-700`
+                                : 'bg-gray-600 border-gray-400 opacity-50 cursor-not-allowed'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <IconComponent size={16} />
+                              <span className="font-semibold text-sm">{weapon.name}</span>
+                            </div>
+                            <div className="text-xs text-left">
+                              <div>⚡{weapon.energy} | 🎯{(weapon.effectiveness * 100)}%</div>
+                              <div className="text-gray-200 mt-1">{weapon.description}</div>
+                              {isRecommended && (
+                                <div className="text-green-300 font-semibold mt-1">
+                                  ⭐ RECOMENDADO
+                                </div>
+                              )}
+                              {targetsWeakness && (
+                                <div className="text-yellow-300 font-semibold mt-1">
+                                  💥 EXPLOTA DEBILIDAD
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Guía táctica */}
+        <div className="mt-6 bg-black/20 backdrop-blur-sm rounded-xl p-6 border border-gray-500/30">
+          <h3 className="text-lg font-bold mb-4 text-gray-300 flex items-center gap-2">
+            <Flame />
+            📚 Guía Táctica Anti-Resistentes
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <strong className="text-blue-300">1. Analiza Primero:</strong>
+              <p className="text-gray-400">Usa "Análisis Cuántico Profundo" para encontrar debilidades específicas</p>
+            </div>
+            <div>
+              <strong className="text-green-300">2. Ataca la Debilidad:</strong>
+              <p className="text-gray-400">Las armas que explotan debilidades tienen mayor probabilidad de éxito</p>
+            </div>
+            <div>
+              <strong className="text-yellow-300">3. Coordina Ataques:</strong>
+              <p className="text-gray-400">Algunos bots requieren múltiples ataques coordinados</p>
+            </div>
+            <div>
+              <strong className="text-red-300">4. Cuidado con Adaptaciones:</strong>
+              <p className="text-gray-400">Bots resistentes se vuelven más fuertes después de cada ataque fallido</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdvancedBotWarfare;
