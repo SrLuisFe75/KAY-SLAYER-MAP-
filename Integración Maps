@@ -1,0 +1,577 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  MapPin, 
+  Crosshair, 
+  Radar, 
+  Target,
+  Zap,
+  Moon,
+  Skull,
+  Beaker,
+  Navigation,
+  Car,
+  Activity,
+  AlertTriangle,
+  Eye,
+  Settings,
+  Filter,
+  Layers,
+  Route,
+  Clock,
+  TrendingUp,
+  Users,
+  Shield
+} from 'lucide-react';
+
+const GoogleMapsQuantumHunter = () => {
+  const mapRef = useRef(null);
+  const [map, setMap] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [isTracking, setIsTracking] = useState(false);
+  const [detectedBots, setDetectedBots] = useState([]);
+  const [mapMarkers, setMapMarkers] = useState([]);
+  const [selectedBot, setSelectedBot] = useState(null);
+  const [mapStyle, setMapStyle] = useState('roadmap'); // roadmap, satellite, hybrid, terrain
+  
+  // Configuración del mapa
+  const [mapSettings, setMapSettings] = useState({
+    showTraffic: true,
+    showTransit: false,
+    showBikes: false,
+    darkMode: true,
+    clustering: true,
+    heatmap: false,
+    realTimeTracking: true
+  });
+
+  // Filtros específicos para Google Maps
+  const [filters, setFilters] = useState({
+    radiusKm: 5,
+    showOnlyActive: false,
+    minThreatLevel: 'low',
+    platforms: ['uber', 'instacart', 'doordash', 'amazonFlex'],
+    showRoutes: true,
+    showHotspots: true
+  });
+
+  // Inicializar Google Maps
+  useEffect(() => {
+    const initMap = () => {
+      if (navigator.geolocation && mapRef.current) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const userPos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            setUserLocation(userPos);
+
+            // Configurar el mapa de Google
+            const googleMap = new window.google.maps.Map(mapRef.current, {
+              zoom: 15,
+              center: userPos,
+              mapTypeId: mapStyle,
+              styles: mapSettings.darkMode ? [
+                { elementType: "geometry", stylers: [{ color: "#212121" }] },
+                { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+                { elementType: "labels.text.fill", stylers: [{ color: "#757575" }] },
+                { elementType: "labels.text.stroke", stylers: [{ color: "#212121" }] },
+                { featureType: "administrative", elementType: "geometry", stylers: [{ color: "#757575" }] },
+                { featureType: "road", elementType: "geometry.fill", stylers: [{ color: "#2c2c2c" }] },
+                { featureType: "road", elementType: "labels.text.fill", stylers: [{ color: "#8a8a8a" }] },
+                { featureType: "water", elementType: "geometry", stylers: [{ color: "#000000" }] },
+                { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#3d3d3d" }] }
+              ] : [],
+              disableDefaultUI: false,
+              zoomControl: true,
+              mapTypeControl: true,
+              scaleControl: true,
+              streetViewControl: false,
+              rotateControl: true,
+              fullscreenControl: true
+            });
+
+            // Agregar marcador de usuario
+            new window.google.maps.Marker({
+              position: userPos,
+              map: googleMap,
+              title: 'Tu Ubicación',
+              icon: {
+                path: window.google.maps.SymbolPath.CIRCLE,
+                scale: 8,
+                fillColor: '#4285F4',
+                fillOpacity: 1,
+                strokeWeight: 2,
+                strokeColor: '#ffffff'
+              }
+            });
+
+            // Círculo de radio de escaneo
+            new window.google.maps.Circle({
+              strokeColor: '#FF0000',
+              strokeOpacity: 0.8,
+              strokeWeight: 2,
+              fillColor: '#FF0000',
+              fillOpacity: 0.1,
+              map: googleMap,
+              center: userPos,
+              radius: filters.radiusKm * 1000 // metros
+            });
+
+            setMap(googleMap);
+          },
+          (error) => {
+            console.error('Error obteniendo ubicación:', error);
+            // Ubicación por defecto (Nueva York)
+            const defaultPos = { lat: 40.7128, lng: -74.0060 };
+            setUserLocation(defaultPos);
+            
+            const googleMap = new window.google.maps.Map(mapRef.current, {
+              zoom: 15,
+              center: defaultPos,
+              mapTypeId: mapStyle
+            });
+            setMap(googleMap);
+          }
+        );
+      }
+    };
+
+    // Cargar Google Maps API si no está cargada
+    if (!window.google) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=geometry,places,visualization`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initMap;
+      document.head.appendChild(script);
+    } else {
+      initMap();
+    }
+  }, []);
+
+  // Simular detección de bots en tiempo real
+  useEffect(() => {
+    if (isTracking && userLocation && map) {
+      const trackingInterval = setInterval(() => {
+        // Simular nuevos bots detectados
+        if (Math.random() < 0.3) {
+          const newBot = generateBotNearLocation(userLocation);
+          setDetectedBots(prev => {
+            const updated = [newBot, ...prev.filter(bot => 
+              Date.now() - bot.lastSeen.getTime() < 600000 // 10 minutos
+            )].slice(0, 50);
+            return updated;
+          });
+        }
+
+        // Actualizar posiciones de bots existentes
+        setDetectedBots(prev => prev.map(bot => {
+          if (bot.status === 'active' && Math.random() < 0.4) {
+            const newPos = moveBot(bot.location, 0.0005); // Movimiento pequeño
+            return {
+              ...bot,
+              location: newPos,
+              lastSeen: new Date(),
+              path: [...(bot.path || []), bot.location]
+            };
+          }
+          return bot;
+        }));
+      }, 4000);
+
+      return () => clearInterval(trackingInterval);
+    }
+  }, [isTracking, userLocation, map]);
+
+  // Actualizar marcadores en el mapa cuando cambien los bots
+  useEffect(() => {
+    if (map && detectedBots.length > 0) {
+      // Limpiar marcadores existentes
+      mapMarkers.forEach(marker => marker.setMap(null));
+      
+      // Crear nuevos marcadores
+      const newMarkers = detectedBots.map(bot => {
+        const marker = new window.google.maps.Marker({
+          position: bot.location,
+          map: map,
+          title: `${bot.platform} Bot - ${bot.threatLevel}`,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: getBotSize(bot.threatLevel),
+            fillColor: getBotColor(bot),
+            fillOpacity: 0.8,
+            strokeWeight: 2,
+            strokeColor: '#ffffff'
+          }
+        });
+
+        // Info window para cada bot
+        const infoWindow = new window.google.maps.InfoWindow({
+          content: createInfoWindowContent(bot)
+        });
+
+        marker.addListener('click', () => {
+          setSelectedBot(bot);
+          infoWindow.open(map, marker);
+        });
+
+        return marker;
+      });
+      
+      setMapMarkers(newMarkers);
+    }
+  }, [detectedBots, map]);
+
+  const generateBotNearLocation = (center) => {
+    const platforms = ['uber', 'instacart', 'doordash', 'amazonFlex'];
+    const threatLevels = ['low', 'medium', 'high', 'critical'];
+    const statuses = ['active', 'poisoned', 'sleeping'];
+    
+    // Generar posición aleatoria dentro del radio
+    const angle = Math.random() * 2 * Math.PI;
+    const distance = Math.random() * filters.radiusKm * 0.01; // Convertir km a grados aprox
+    
+    const bot = {
+      id: `bot_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      platform: platforms[Math.floor(Math.random() * platforms.length)],
+      threatLevel: threatLevels[Math.floor(Math.random() * threatLevels.length)],
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      location: {
+        lat: center.lat + Math.cos(angle) * distance,
+        lng: center.lng + Math.sin(angle) * distance
+      },
+      confidence: Math.random() * 0.4 + 0.6,
+      responseTime: Math.random() * 80 + 10,
+      earnings: Math.random() * 400 + 50,
+      lastSeen: new Date(),
+      detectedAt: new Date(),
+      speed: Math.random() * 60 + 10, // km/h
+      direction: Math.random() * 360 // grados
+    };
+
+    return bot;
+  };
+
+  const moveBot = (currentPos, maxDistance) => {
+    return {
+      lat: currentPos.lat + (Math.random() - 0.5) * maxDistance,
+      lng: currentPos.lng + (Math.random() - 0.5) * maxDistance
+    };
+  };
+
+  const getBotColor = (bot) => {
+    if (bot.status === 'sleeping') return '#3B82F6'; // Azul
+    if (bot.status === 'poisoned') return '#10B981'; // Verde
+    
+    switch (bot.threatLevel) {
+      case 'critical': return '#DC2626'; // Rojo
+      case 'high': return '#F59E0B'; // Naranja
+      case 'medium': return '#EAB308'; // Amarillo
+      default: return '#6B7280'; // Gris
+    }
+  };
+
+  const getBotSize = (threatLevel) => {
+    switch (threatLevel) {
+      case 'critical': return 12;
+      case 'high': return 10;
+      case 'medium': return 8;
+      default: return 6;
+    }
+  };
+
+  const createInfoWindowContent = (bot) => {
+    return `
+      <div style="color: black; padding: 8px; min-width: 200px;">
+        <h3 style="margin: 0 0 8px 0; color: #1f2937;">${bot.platform} Bot</h3>
+        <p><strong>Nivel:</strong> ${bot.threatLevel}</p>
+        <p><strong>Estado:</strong> ${bot.status}</p>
+        <p><strong>Confianza:</strong> ${(bot.confidence * 100).toFixed(0)}%</p>
+        <p><strong>Respuesta:</strong> ${bot.responseTime.toFixed(0)}ms</p>
+        <p><strong>Ganancias:</strong> $${bot.earnings.toFixed(0)}/día</p>
+        <p><strong>Velocidad:</strong> ${bot.speed?.toFixed(0)} km/h</p>
+        <p><strong>Detectado:</strong> ${bot.detectedAt.toLocaleTimeString()}</p>
+      </div>
+    `;
+  };
+
+  const startTracking = () => {
+    setIsTracking(true);
+    setDetectedBots([]);
+  };
+
+  const stopTracking = () => {
+    setIsTracking(false);
+  };
+
+  const centerOnUser = () => {
+    if (map && userLocation) {
+      map.panTo(userLocation);
+      map.setZoom(15);
+    }
+  };
+
+  const toggleMapLayer = (layer) => {
+    if (!map) return;
+    
+    switch (layer) {
+      case 'traffic':
+        const trafficLayer = new window.google.maps.TrafficLayer();
+        if (mapSettings.showTraffic) {
+          trafficLayer.setMap(null);
+        } else {
+          trafficLayer.setMap(map);
+        }
+        setMapSettings(prev => ({ ...prev, showTraffic: !prev.showTraffic }));
+        break;
+      case 'transit':
+        const transitLayer = new window.google.maps.TransitLayer();
+        if (mapSettings.showTransit) {
+          transitLayer.setMap(null);
+        } else {
+          transitLayer.setMap(map);
+        }
+        setMapSettings(prev => ({ ...prev, showTransit: !prev.showTransit }));
+        break;
+    }
+  };
+
+  const filteredBots = detectedBots.filter(bot => {
+    if (filters.showOnlyActive && bot.status !== 'active') return false;
+    if (!filters.platforms.includes(bot.platform)) return false;
+    
+    const threatOrder = { low: 0, medium: 1, high: 2, critical: 3 };
+    const minLevel = threatOrder[filters.minThreatLevel];
+    const botLevel = threatOrder[bot.threatLevel];
+    if (botLevel < minLevel) return false;
+    
+    return true;
+  });
+
+  const stats = {
+    total: filteredBots.length,
+    active: filteredBots.filter(b => b.status === 'active').length,
+    neutralized: filteredBots.filter(b => ['poisoned', 'sleeping'].includes(b.status)).length,
+    critical: filteredBots.filter(b => b.threatLevel === 'critical').length
+  };
+
+  return (
+    <div className="h-screen bg-gray-900 text-white flex">
+      {/* Panel de control lateral */}
+      <div className="w-80 bg-black/80 backdrop-blur-sm border-r border-gray-600 p-4 overflow-y-auto">
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-blue-400 mb-2 flex items-center gap-2">
+            <MapPin />
+            Google Maps Hunter
+          </h1>
+          <p className="text-sm text-gray-300">Detección de bots en mapa real</p>
+        </div>
+
+        {/* Controles principales */}
+        <div className="mb-6">
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={isTracking ? stopTracking : startTracking}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded font-semibold ${
+                isTracking 
+                  ? 'bg-red-600 hover:bg-red-700' 
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              <Radar className={isTracking ? 'animate-spin' : ''} size={16} />
+              {isTracking ? 'Detener' : 'Rastrear'}
+            </button>
+            <button
+              onClick={centerOnUser}
+              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded"
+            >
+              <Navigation size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Estadísticas */}
+        <div className="mb-6">
+          <h3 className="font-semibold mb-3">Estadísticas en Vivo</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-blue-900/50 p-2 rounded text-center">
+              <div className="text-lg font-bold text-blue-400">{stats.total}</div>
+              <div className="text-xs text-gray-300">Total</div>
+            </div>
+            <div className="bg-red-900/50 p-2 rounded text-center">
+              <div className="text-lg font-bold text-red-400">{stats.critical}</div>
+              <div className="text-xs text-gray-300">Críticos</div>
+            </div>
+            <div className="bg-orange-900/50 p-2 rounded text-center">
+              <div className="text-lg font-bold text-orange-400">{stats.active}</div>
+              <div className="text-xs text-gray-300">Activos</div>
+            </div>
+            <div className="bg-green-900/50 p-2 rounded text-center">
+              <div className="text-lg font-bold text-green-400">{stats.neutralized}</div>
+              <div className="text-xs text-gray-300">Neutralizados</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filtros */}
+        <div className="mb-6">
+          <h3 className="font-semibold mb-3">Filtros</h3>
+          
+          <div className="mb-3">
+            <label className="block text-sm mb-1">Radio de escaneo</label>
+            <input
+              type="range"
+              min="1"
+              max="20"
+              value={filters.radiusKm}
+              onChange={(e) => setFilters(prev => ({ ...prev, radiusKm: parseInt(e.target.value) }))}
+              className="w-full"
+            />
+            <div className="text-sm text-gray-400">{filters.radiusKm} km</div>
+          </div>
+
+          <div className="mb-3">
+            <label className="block text-sm mb-1">Nivel mínimo de amenaza</label>
+            <select
+              value={filters.minThreatLevel}
+              onChange={(e) => setFilters(prev => ({ ...prev, minThreatLevel: e.target.value }))}
+              className="w-full bg-gray-700 text-white rounded p-1"
+            >
+              <option value="low">Bajo</option>
+              <option value="medium">Medio</option>
+              <option value="high">Alto</option>
+              <option value="critical">Crítico</option>
+            </select>
+          </div>
+
+          <label className="flex items-center gap-2 mb-2">
+            <input
+              type="checkbox"
+              checked={filters.showOnlyActive}
+              onChange={(e) => setFilters(prev => ({ ...prev, showOnlyActive: e.target.checked }))}
+            />
+            <span className="text-sm">Solo bots activos</span>
+          </label>
+
+          <label className="flex items-center gap-2 mb-2">
+            <input
+              type="checkbox"
+              checked={filters.showRoutes}
+              onChange={(e) => setFilters(prev => ({ ...prev, showRoutes: e.target.checked }))}
+            />
+            <span className="text-sm">Mostrar rutas</span>
+          </label>
+        </div>
+
+        {/* Capas del mapa */}
+        <div className="mb-6">
+          <h3 className="font-semibold mb-3">Capas de Google Maps</h3>
+          
+          <label className="flex items-center gap-2 mb-2">
+            <input
+              type="checkbox"
+              checked={mapSettings.showTraffic}
+              onChange={() => toggleMapLayer('traffic')}
+            />
+            <span className="text-sm">Tráfico</span>
+          </label>
+
+          <label className="flex items-center gap-2 mb-2">
+            <input
+              type="checkbox"
+              checked={mapSettings.showTransit}
+              onChange={() => toggleMapLayer('transit')}
+            />
+            <span className="text-sm">Transporte público</span>
+          </label>
+
+          <div className="mb-2">
+            <label className="block text-sm mb-1">Tipo de mapa</label>
+            <select
+              value={mapStyle}
+              onChange={(e) => {
+                setMapStyle(e.target.value);
+                if (map) map.setMapTypeId(e.target.value);
+              }}
+              className="w-full bg-gray-700 text-white rounded p-1"
+            >
+              <option value="roadmap">Calles</option>
+              <option value="satellite">Satélite</option>
+              <option value="hybrid">Híbrido</option>
+              <option value="terrain">Terreno</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Lista de bots detectados */}
+        <div>
+          <h3 className="font-semibold mb-3">Bots Detectados</h3>
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {filteredBots.slice(0, 10).map(bot => (
+              <div
+                key={bot.id}
+                className={`p-2 rounded border cursor-pointer ${
+                  selectedBot?.id === bot.id 
+                    ? 'border-blue-500 bg-blue-900/20' 
+                    : 'border-gray-600 bg-gray-800/50'
+                }`}
+                onClick={() => {
+                  setSelectedBot(bot);
+                  if (map) {
+                    map.panTo(bot.location);
+                    map.setZoom(17);
+                  }
+                }}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-sm font-semibold">{bot.platform}</div>
+                    <div className="text-xs text-gray-400">{bot.threatLevel}</div>
+                  </div>
+                  <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: getBotColor(bot) }} />
+                </div>
+                <div className="text-xs text-gray-300 mt-1">
+                  {bot.responseTime.toFixed(0)}ms • ${bot.earnings.toFixed(0)}/día
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Área del mapa de Google */}
+      <div className="flex-1 relative">
+        <div 
+          ref={mapRef} 
+          className="w-full h-full"
+          style={{ minHeight: '100vh' }}
+        />
+        
+        {/* Overlay de información */}
+        <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm rounded-lg p-3 border border-gray-600">
+          <div className="flex items-center gap-2 text-sm">
+            <div className={`w-2 h-2 rounded-full ${isTracking ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`} />
+            <span>{isTracking ? 'Rastreando en tiempo real' : 'Rastreo detenido'}</span>
+          </div>
+          <div className="text-xs text-gray-300 mt-1">
+            Radio: {filters.radiusKm}km | Bots: {stats.total}
+          </div>
+        </div>
+
+        {/* Nota sobre API Key */}
+        <div className="absolute bottom-4 left-4 bg-yellow-900/80 backdrop-blur-sm rounded-lg p-3 border border-yellow-600 max-w-sm">
+          <div className="text-sm text-yellow-200">
+            <strong>⚠️ Configuración requerida:</strong>
+          </div>
+          <div className="text-xs text-yellow-300 mt-1">
+            Necesitas una API Key de Google Maps para uso en producción.
+            Reemplaza "YOUR_GOOGLE_MAPS_API_KEY" con tu clave real.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default GoogleMapsQuantumHunter;
